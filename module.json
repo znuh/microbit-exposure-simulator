@@ -1,7 +1,7 @@
 {
-  "name": "microbit-samples",
-  "version": "2.1.1",
-  "description": "The micro:bit runtime common abstraction with examples.",
+  "name": "microbit-exposure-simulator",
+  "version": "0.1.1",
+  "description": "COVID-19 BLE Exposure Notification Simulator",
   "license": "MIT",
   "dependencies": {
     "microbit": "lancaster-university/microbit#v2.1.1"
