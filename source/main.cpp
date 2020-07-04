@@ -72,9 +72,11 @@ void onLongClick(MicroBitEvent e) {
 }
 
 int main() {
-    // Initialise the micro:bit runtime.
+
+    uBit.seedRandom(); /* needs to be done before uBit.init() or the seed will always be the same - WTF?! */
+
     uBit.init();
-	uBit.seedRandom();
+
 	update_beacon(uBit.ble);
 
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onClick);
