@@ -3,69 +3,84 @@
 MicroBit uBit;
 
 static uint8_t exposure_note[] = {
-	//0x02, 0x01, 0x1A,
-	//0x03, 0x03, 0x6f, 0xfd,
-	//0x17, 0x16, 
 	0x6f, 0xfd,
 	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
-	0,1,2,3 };
-
-const int8_t CALIBRATED_POWERS[] = {-49, -37, -33, -28, -25, -20, -15, -10};
+	0,1,2,3
+};
 
 static uint8_t advertising = 0;
-static uint8_t tx_power_level = 6;
+static uint8_t txpower = MICROBIT_BLE_POWER_LEVELS;
 
-static void beacon_init(BLEDevice* ble) {
-	//uint8_t flags = 0x1A;
+static void update_txpower(int inc) {
+	if(inc) {
+		txpower+=inc;
+		txpower = (txpower <= MICROBIT_BLE_POWER_LEVELS) ? txpower : 0;
+	}
+	uBit.bleManager.setTransmitPower(txpower);
+	uBit.display.printCharAsync(advertising ? ('1'+txpower) : '.');
+}
+
+static void update_beacon(BLEDevice* ble) {
+	uint32_t i;
 	
-    ble->gap().stopAdvertising();
+	if(advertising)
+		ble->gap().stopAdvertising();
+	
     ble->clearAdvertisingPayload();
 
     ble->setAdvertisingType(GapAdvertisingParams::ADV_NON_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(250);
 
+	for(i=2;i<sizeof(exposure_note);i++)
+		exposure_note[i] = uBit.random(UINT8_MAX+1);
+
 	/* prepending the flags somehow kills the advertisements!? */
     //ble->accumulateAdvertisingPayload(GapAdvertisingData::LE_GENERAL_DISCOVERABLE | GapAdvertisingData::SIMULTANEOUS_LE_BREDR_C | GapAdvertisingData::SIMULTANEOUS_LE_BREDR_H);
-	//ble->accumulateAdvertisingPayload(GapAdvertisingData::FLAGS, &flags, sizeof(flags));
 	ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, exposure_note, 2);
     ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, exposure_note, sizeof(exposure_note));
 
-    ble->gap().startAdvertising();
+	update_txpower(0);
+    if(advertising)
+		ble->gap().startAdvertising();
 }
 
-void startAdvertising() {
-    beacon_init(uBit.ble);
-    uBit.bleManager.setTransmitPower(tx_power_level);
-    uBit.display.scroll("ADV");
-    advertising = 1;
+static void startAdvertising() {
+	uBit.ble->gap().startAdvertising();
+	advertising = 1;
+	uBit.display.printCharAsync('1'+txpower);
 }
 
-void stopAdvertising() {
+static void stopAdvertising() {
     uBit.bleManager.stopAdvertising();
-    uBit.display.scroll("OFF");
     advertising = 0;
+    uBit.display.printCharAsync('.');
 }
 
-void onButtonA(MicroBitEvent) {
-    if (advertising == 1)
-        return;
-    startAdvertising();
+void onClick(MicroBitEvent e) {
+	if (e.source == MICROBIT_ID_BUTTON_A) {
+		if(!advertising)
+			startAdvertising();
+		else
+			update_txpower(1);
+	}
 }
 
-void onButtonB(MicroBitEvent) {
-    if (advertising == 0)
-        return;
-    stopAdvertising();
+void onLongClick(MicroBitEvent e) {
+	if (e.source == MICROBIT_ID_BUTTON_A) {
+		stopAdvertising();
+	}
 }
 
 int main() {
     // Initialise the micro:bit runtime.
     uBit.init();
+	uBit.seedRandom();
+	update_beacon(uBit.ble);
 
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonA);
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonB);
-    
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onClick);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_LONG_CLICK, onLongClick);
+
     startAdvertising();
-    
+
     release_fiber();
 }
