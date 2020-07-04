@@ -8,6 +8,7 @@ static uint8_t exposure_note[] = {
 	0,1,2,3
 };
 
+static uint8_t randomize_txpower = 0;
 static uint8_t advertising = 0;
 static uint8_t txpower = MICROBIT_BLE_POWER_LEVELS - 1;
 
@@ -66,23 +67,44 @@ void onClick(MicroBitEvent e) {
 }
 
 void onLongClick(MicroBitEvent e) {
-	if (e.source == MICROBIT_ID_BUTTON_A) {
+	if (e.source == MICROBIT_ID_BUTTON_A)
 		stopAdvertising();
-	}
+	if (e.source == MICROBIT_ID_BUTTON_B)
+		randomize_txpower ^= 1;
 }
 
 int main() {
+	uint32_t next_rpi_change, now = uBit.systemTime();
 
     uBit.seedRandom(); /* needs to be done before uBit.init() or the seed will always be the same - WTF?! */
 
     uBit.init();
 
 	update_beacon(uBit.ble);
+	next_rpi_change = now + (600 + uBit.random(600))*1000;
 
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onClick);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_LONG_CLICK, onLongClick);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_LONG_CLICK, onLongClick);
 
     startAdvertising();
+
+    while(1) {
+		now = uBit.systemTime();
+
+		/* change RPI + AEM every 10..20 minutes */
+		if(now >= next_rpi_change) {
+			update_beacon(uBit.ble);
+			next_rpi_change = now + (600 + uBit.random(600))*1000;
+		}
+
+		if((randomize_txpower) && (advertising)) {
+			txpower = uBit.random(MICROBIT_BLE_POWER_LEVELS);
+			update_txpower(0);
+		}
+
+		uBit.sleep(500);
+	}
 
     release_fiber();
 }
