@@ -1,5 +1,7 @@
 #include "MicroBit.h"
 
+#define VERSION_STRING	"v0.1"
+
 MicroBit uBit;
 
 static uint8_t exposure_note[] = {
@@ -82,6 +84,10 @@ int main() {
     uBit.seedRandom(); /* needs to be done before uBit.init() or the seed will always be the same - WTF?! */
 
     uBit.init();
+
+	/* display project identifier and version string both via LEDs and USB serial */
+	uBit.display.scroll("es-" VERSION_STRING, MICROBIT_DEFAULT_SCROLL_SPEED/2);
+	uBit.serial.send("exposure-simulator " VERSION_STRING "\r\n", SYNC_SPINWAIT);
 
 	update_beacon(uBit.ble);
 	next_rpi_change = now + (600 + uBit.random(600))*1000;
