@@ -6,7 +6,7 @@ The micro:bit sends simulated COVID-19 Exposure Notification beacons. RPI, AEM a
 
 LEDs indicate the current tx power setting. Minimum tx power is '1', maximum tx power is '8'. A single dot indicates transmissions have been turned off.
 
-Press *A* start sending Exposure Notifications or to change the tx power.
+Press *A* to start sending Exposure Notifications or to change the tx power.
 
 Press *A* for 3 seconds to stop sending Exposure Notifications.
 
