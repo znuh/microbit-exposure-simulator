@@ -26,7 +26,10 @@ static void update_beacon(BLEDevice* ble) {
 	
 	if(advertising)
 		ble->gap().stopAdvertising();
-	
+
+    /* get a fresh bdaddr as well */
+    ble->gap().setAddress(BLEProtocol::AddressType::RANDOM_PRIVATE_RESOLVABLE, {0});
+
     ble->clearAdvertisingPayload();
 
     ble->setAdvertisingType(GapAdvertisingParams::ADV_NON_CONNECTABLE_UNDIRECTED);
