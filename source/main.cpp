@@ -9,12 +9,12 @@ static uint8_t exposure_note[] = {
 };
 
 static uint8_t advertising = 0;
-static uint8_t txpower = MICROBIT_BLE_POWER_LEVELS;
+static uint8_t txpower = MICROBIT_BLE_POWER_LEVELS - 1;
 
 static void update_txpower(int inc) {
 	if(inc) {
 		txpower+=inc;
-		txpower = (txpower <= MICROBIT_BLE_POWER_LEVELS) ? txpower : 0;
+		txpower = (txpower < MICROBIT_BLE_POWER_LEVELS) ? txpower : 0;
 	}
 	uBit.bleManager.setTransmitPower(txpower);
 	uBit.display.printCharAsync(advertising ? ('1'+txpower) : '.');
